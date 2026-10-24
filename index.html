@@ -255,7 +255,7 @@ const SONGS = [
   ["פנים ושמות","דני רובס","","aAPQwpGqL1E"],
 ].map(([title,artist,q,yt],i)=>({n:i+1,title,artist,q:q||`${title} ${artist.split(/ & | · /)[0]}`,yt,links:{}}));
 const SERVICES = [
-  {id:"spotify", name:"Spotify", playlist:"", url:q=>`https://open.spotify.com/search/${encodeURIComponent(q)}`},
+  {id:"spotify", name:"Spotify", playlist:"https://open.spotify.com/playlist/1oiiG8BS3OmTGUsExBqzMW", url:q=>`https://open.spotify.com/search/${encodeURIComponent(q)}`},
   {id:"apple",   name:"Apple Music", playlist:PLAYLIST_URL, url:q=>`https://music.apple.com/il/search?term=${encodeURIComponent(q)}`},
   {id:"ytmusic", name:"YouTube Music", playlist:"", url:q=>`https://music.youtube.com/search?q=${encodeURIComponent(q)}`},
   {id:"youtube", name:"YouTube", playlist:"YT", url:q=>`https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`},

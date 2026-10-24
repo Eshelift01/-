@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>סיור בהר הרצל</title>
-<meta name="description" content="אפליקציית סיור בהר הרצל: מפה אינטראקטיבית ושירי הסיור בכל שירותי הסטרימינג">
+<meta name="description" content="אפליקציית סיור בהר הרצל: מפה אינטראקטיבית ופלייליסט הסיור בכל שירותי הסטרימינג">
 <meta name="theme-color" content="#2f5a45">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="הר הרצל">
@@ -89,30 +89,20 @@ svg text{font-family:var(--body)}
 .mk.on circle.halo{opacity:1}
 .mk.on circle.core{stroke:var(--sel);stroke-width:3}
 
-/* songs view */
+/* playlist view */
 .songs{display:grid;gap:20px;max-width:760px;width:100%;margin:0 auto}
-.svc{display:grid;gap:10px}
-.svc h2,.songs h2{font-family:var(--display);font-size:22px;margin:0}
-.chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:600 14px var(--body);cursor:pointer;min-height:40px}
-.chip[aria-pressed="true"]{border-color:var(--cypress);background:var(--cypress);color:var(--paper)}
-.tracks{list-style:none;margin:0;padding:0;display:grid;gap:10px}
-.track{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:10px}
-.track-head{display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:center}
-.track-n{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--hill);color:var(--ink);font:700 15px var(--body);border:1px solid var(--line)}
-.track b{display:block;font-size:17px;line-height:1.3}
-.track small{color:var(--muted);font-size:14px}
-.play{display:inline-flex;align-items:center;gap:6px;padding:10px 14px;min-height:44px;border-radius:8px;background:var(--cypress);color:var(--paper);font:700 14px var(--body);text-decoration:none;white-space:nowrap}
-.play svg{width:16px;height:16px}
-.more{font-size:13px;color:var(--muted)}
-.more summary{cursor:pointer;padding:4px 0;list-style-position:inside}
-.alt{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.alt a{padding:6px 10px;border-radius:6px;border:1px solid var(--line);color:var(--ink);text-decoration:none;font-size:13px;font-weight:600}
-.alt a:hover{border-color:var(--cypress)}
+.songs h2{font-family:var(--display);font-size:22px;margin:0}
+.svcs{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.svcbtn{display:grid;gap:2px;padding:14px 16px;min-height:64px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);text-decoration:none}
+.svcbtn:hover{border-color:var(--cypress)}
+.svcbtn b{font-size:17px}
+.svcbtn small{color:var(--muted);font-size:13px}
+.svcbtn.main{background:var(--cypress);border-color:var(--cypress);color:var(--paper)}
+.svcbtn.main small{color:inherit;opacity:.85}
+.copy{justify-self:start;padding:10px 16px;min-height:44px;border-radius:8px;border:1px solid var(--cypress);background:transparent;color:var(--cypress);font:700 14px var(--body);cursor:pointer}
+.steps{margin:0;padding-inline-start:20px;display:grid;gap:4px;color:var(--muted);font-size:14px}
 .applebox{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:10px}
 .applebox iframe{width:100%;height:450px;border:0;border-radius:10px;background:transparent}
-.applebox a{color:var(--cypress);font-weight:600}
-@media (max-width:480px){.track-head{grid-template-columns:34px 1fr}.track-head .play{grid-column:1 / -1;justify-content:center}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -120,7 +110,7 @@ svg text{font-family:var(--body)}
 <div class="wrap">
   <header>
     <h1>סיור בהר הרצל</h1>
-    <p class="sub">הר הזיכרון, ירושלים · מפה אינטראקטיבית ושירי הסיור</p>
+    <p class="sub">הר הזיכרון, ירושלים · מפה אינטראקטיבית ופלייליסט הסיור</p>
   </header>
 
   <!-- MAP -->
@@ -155,28 +145,29 @@ svg text{font-family:var(--body)}
     </div>
   </section>
 
-  <!-- SONGS -->
+  <!-- PLAYLIST -->
   <section id="view-songs" role="tabpanel" aria-labelledby="tab-songs" hidden>
     <div class="songs">
-      <div class="svc">
-        <h2>באיזה שירות אתם מאזינים?</h2>
-        <p class="sub">בחרו פעם אחת, וכל כפתור "האזנה" ייפתח ישירות באפליקציה שלכם.</p>
-        <div class="chips" id="chips" role="group" aria-label="שירות סטרימינג"></div>
-      </div>
-
       <div>
-        <h2>שירי הסיור</h2>
-        <p class="sub">שיר אחד בין כל שתי תחנות. שימו אוזניות.</p>
+        <h2>הפלייליסט של הסיור</h2>
+        <p class="sub">בחרו את שירות הסטרימינג שלכם. שימו אוזניות.</p>
       </div>
-      <ol class="tracks" id="tracks"></ol>
-
+      <ul class="svcs" id="svcs"></ul>
+      <button class="copy" id="copy">העתקת קישור הפלייליסט</button>
+      <div>
+        <p class="note">לשירותים שאינם Apple Music: הכפתור פותח את TuneMyMusic, שמעביר את הפלייליסט לשירות שלכם בחינם.</p>
+        <ol class="steps">
+          <li>לחצו "העתקת קישור הפלייליסט".</li>
+          <li>לחצו על השירות שלכם. ב־TuneMyMusic בחרו Apple Music כמקור והדביקו את הקישור.</li>
+          <li>בחרו את השירות שלכם כיעד, התחברו, והפלייליסט יופיע אצלכם.</li>
+        </ol>
+      </div>
       <div class="applebox">
-        <h2>הפלייליסט המלא ב־Apple Music</h2>
+        <h2>האזנה כאן בדף</h2>
         <iframe id="appleEmbed" title="פלייליסט סיור בהר הרצל ב־Apple Music" loading="lazy"
           allow="autoplay *; encrypted-media *; clipboard-write"
           sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation-by-user-activation"></iframe>
-        <p class="note">מנויי Apple Music שומעים את השירים המלאים. בלי מנוי מתנגנות דגימות קצרות, ולכן כדאי לבחור למעלה את השירות שלכם.</p>
-        <a id="appleLink" target="_blank" rel="noopener">פתיחת הפלייליסט ב־Apple Music ↗</a>
+        <p class="note">מנויי Apple Music שומעים כאן את השירים המלאים. בלי מנוי מתנגנות דגימות קצרות.</p>
       </div>
     </div>
   </section>
@@ -189,66 +180,33 @@ svg text{font-family:var(--body)}
   </button>
   <button role="tab" id="tab-songs" aria-controls="view-songs" aria-selected="false">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-    שירים
+    פלייליסט
   </button>
 </nav>
 
 <script>
-/* ---------- songs ----------
-   Playlist order. To pin an exact track on a service, add it under `links`,
-   e.g. links:{spotify:"https://open.spotify.com/track/..."}; otherwise the app
-   opens a search for `q` on the chosen service. */
+/* ---------- playlist ----------
+   The playlist lives on Apple Music. For any other service, paste a direct
+   playlist link into `link` and its button opens it; while `link` is empty the
+   button opens TuneMyMusic, which copies the Apple Music playlist to that service. */
 const PLAYLIST_URL = "https://music.apple.com/il/playlist/%D7%A1%D7%99%D7%95%D7%A8-%D7%91%D7%94%D7%A8-%D7%94%D7%A8%D7%A6%D7%9C/pl.u-DdANxJ5TaJB3BZy?l=iw";
-const SONGS = [
-  {n:1, title:"ג'רוז", artist:"ענר שפירא ז״ל", q:"ג'רוז ענר שפירא", links:{}},
-  {n:2, title:"האור בקצה", artist:"אריק איינשטיין", q:"האור בקצה אריק איינשטיין", links:{}},
-  {n:3, title:"אפר ואבק", artist:"יהודה פוליקר", q:"אפר ואבק יהודה פוליקר", links:{}},
-  {n:4, title:"האמנם", artist:"לאה גולדברג · חוה אלברשטיין", q:"האמנם חוה אלברשטיין", links:{}},
-  {n:5, title:"אולי צריך לתת לזה עוד זמן", artist:"אריק איינשטיין", q:"אולי צריך לתת לזה עוד זמן אריק איינשטיין", links:{}},
-  {n:6, title:"שיר ללא שם", artist:"שלום חנוך · ביצוע: אביתר בנאי", q:"שיר ללא שם אביתר בנאי", links:{}},
-  {n:7, title:"כוכבים בשמיים", artist:"שי צברי", q:"כוכבים בשמיים שי צברי", links:{}},
-];
+const TRANSFER_URL = "https://www.tunemymusic.com/";
 const SERVICES = [
-  {id:"spotify", name:"Spotify", url:q=>`https://open.spotify.com/search/${encodeURIComponent(q)}`},
-  {id:"apple",   name:"Apple Music", url:q=>`https://music.apple.com/il/search?term=${encodeURIComponent(q)}`},
-  {id:"ytmusic", name:"YouTube Music", url:q=>`https://music.youtube.com/search?q=${encodeURIComponent(q)}`},
-  {id:"youtube", name:"YouTube", url:q=>`https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`},
-  {id:"deezer",  name:"Deezer", url:q=>`https://www.deezer.com/search/${encodeURIComponent(q)}`},
-  {id:"tidal",   name:"Tidal", url:q=>`https://listen.tidal.com/search?q=${encodeURIComponent(q)}`},
-  {id:"amazon",  name:"Amazon Music", url:q=>`https://music.amazon.com/search/${encodeURIComponent(q)}`},
+  {name:"Apple Music", link:PLAYLIST_URL},
+  {name:"Spotify", link:""},
+  {name:"YouTube Music", link:""},
+  {name:"YouTube", link:""},
+  {name:"Deezer", link:""},
+  {name:"Tidal", link:""},
+  {name:"Amazon Music", link:""},
 ];
-const songUrl=(s,svc)=>s.links[svc.id]||svc.url(s.q);
-
-let svcId="spotify";
-try{const v=localStorage.getItem("herzl-svc");if(SERVICES.some(s=>s.id===v))svcId=v}catch(e){}
-
-const chips=document.getElementById("chips"), tracks=document.getElementById("tracks");
-const playIcon='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>';
-function renderChips(){
-  chips.innerHTML="";
-  for(const svc of SERVICES){
-    const b=document.createElement("button");
-    b.className="chip";b.textContent=svc.name;b.setAttribute("aria-pressed",svc.id===svcId);
-    b.onclick=()=>{svcId=svc.id;try{localStorage.setItem("herzl-svc",svcId)}catch(e){};renderChips();renderTracks()};
-    chips.appendChild(b);
-  }
-}
-const esc=t=>t.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-function renderTracks(){
-  const svc=SERVICES.find(s=>s.id===svcId);
-  tracks.innerHTML=SONGS.map(s=>`<li class="track">
-    <div class="track-head">
-      <span class="track-n">${s.n}</span>
-      <span><b>${esc(s.title)}</b><small>${esc(s.artist)}</small></span>
-      <a class="play" href="${songUrl(s,svc)}" target="_blank" rel="noopener">${playIcon}האזנה ב־${svc.name}</a>
-    </div>
-    <details class="more"><summary>שירותים אחרים</summary>
-      <div class="alt">${SERVICES.filter(x=>x.id!==svcId).map(x=>`<a href="${songUrl(s,x)}" target="_blank" rel="noopener">${x.name}</a>`).join("")}</div>
-    </details>
-  </li>`).join("");
-}
-renderChips();renderTracks();
-document.getElementById("appleLink").href=PLAYLIST_URL;
+document.getElementById("svcs").innerHTML=SERVICES.map(s=>`<li><a class="svcbtn${s.link===PLAYLIST_URL?" main":""}" href="${s.link||TRANSFER_URL}" target="_blank" rel="noopener">
+  <b>${s.name}</b><small>${s.link?"פתיחת הפלייליסט ↗":"העברת הפלייליסט לשירות ↗"}</small></a></li>`).join("");
+const copyBtn=document.getElementById("copy");
+copyBtn.onclick=async()=>{
+  try{await navigator.clipboard.writeText(PLAYLIST_URL);copyBtn.textContent="הקישור הועתק ✓"}
+  catch(e){prompt("העתיקו את הקישור:",PLAYLIST_URL)}
+};
 const embedSrc=PLAYLIST_URL.replace("https://music.apple.com","https://embed.music.apple.com");
 
 /* ---------- tabs ---------- */

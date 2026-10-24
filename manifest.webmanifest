@@ -1,0 +1,14 @@
+{
+  "name": "סיור בהר הרצל",
+  "short_name": "הר הרצל",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eef0ea",
+  "theme_color": "#2f5a45",
+  "icons": [
+    {"src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+  ]
+}

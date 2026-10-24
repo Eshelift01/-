@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>סיור בהר הרצל</title>
+<meta name="description" content="אפליקציית סיור בהר הרצל: מפה אינטראקטיבית ושירי הסיור בכל שירותי הסטרימינג">
+<meta name="theme-color" content="#2f5a45">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="הר הרצל">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700&family=Assistant:wght@400;600;700&display=swap">
+<style>
+/* App shell: header, two views (map / songs), bottom tab bar like a phone app */
+:root{
+  --bg:#eef0ea; --paper:#f8f8f4; --ink:#1f2a24; --muted:#5d6b62; --line:#cfd5cb;
+  --hill:#e3e7dc; --contour:#b9c3b2; --path:#ffffff; --pathEdge:#c4cbbf;
+  --cypress:#2f5a45; --stone:#8a7a5c; --memorial:#3d5a80; --sel:#b8862b;
+  --cem:#d6dfd0; --ring:rgba(47,90,69,.18);
+  --display:"Frank Ruhl Libre", "David", Georgia, serif;
+  --body:"Assistant", "Segoe UI", Arial, sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141a17; --paper:#1b231f; --ink:#e6ebe4; --muted:#9caa9f; --line:#2f3a34;
+  --hill:#1f2924; --contour:#34443b; --path:#3a4740; --pathEdge:#2a352f;
+  --cypress:#7fbf9c; --stone:#c9b48a; --memorial:#8fb0d9; --sel:#e0b45a;
+  --cem:#24312a; --ring:rgba(127,191,156,.2); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141a17; --paper:#1b231f; --ink:#e6ebe4; --muted:#9caa9f; --line:#2f3a34;
+  --hill:#1f2924; --contour:#34443b; --path:#3a4740; --pathEdge:#2a352f;
+  --cypress:#7fbf9c; --stone:#c9b48a; --memorial:#8fb0d9; --sel:#e0b45a;
+  --cem:#24312a; --ring:rgba(127,191,156,.2); color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55;direction:rtl;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-top:max(20px,env(safe-area-inset-top,0px));padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:20px}
+header{display:grid;gap:4px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4vw,40px);margin:0;line-height:1.15;text-wrap:balance}
+.sub{color:var(--muted);margin:0}
+button,a{-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--sel);outline-offset:2px}
+
+/* tabs */
+.tabs{position:fixed;inset-inline:0;bottom:0;z-index:10;display:flex;justify-content:center;gap:4px;
+  background:var(--paper);border-top:1px solid var(--line);padding:8px 16px calc(8px + env(safe-area-inset-bottom,0px))}
+.tabs button{flex:1;max-width:220px;display:grid;justify-items:center;gap:2px;padding:6px 8px;border:0;border-radius:8px;
+  background:transparent;color:var(--muted);font:600 13px var(--body);cursor:pointer}
+.tabs button svg{width:24px;height:24px}
+.tabs button[aria-selected="true"]{color:var(--cypress);background:var(--ring)}
+[role="tabpanel"][hidden]{display:none}
+
+/* map view */
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.mapbox{background:var(--paper);border:1px solid var(--line);border-radius:10px;overflow:hidden;position:relative}
+svg#map{display:block;width:100%;height:auto;aspect-ratio:840/540;touch-action:none;cursor:grab;user-select:none}
+svg#map.drag{cursor:grabbing}
+.ctrls{position:absolute;top:10px;left:10px;display:flex;flex-direction:column;gap:6px}
+.ctrls button{width:34px;height:34px;border-radius:6px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:600 18px var(--body);cursor:pointer}
+.compass{position:absolute;bottom:10px;left:12px;font:600 12px var(--body);color:var(--muted);display:flex;align-items:center;gap:4px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;padding:10px 14px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+aside{display:grid;gap:14px;min-width:0}
+.list{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.site{display:grid;grid-template-columns:32px 1fr;gap:10px;align-items:center;width:100%;text-align:right;padding:10px 12px;border-radius:8px;border:1px solid transparent;background:transparent;color:inherit;font:inherit;cursor:pointer}
+.site:hover{background:var(--paper);border-color:var(--line)}
+.site[aria-pressed="true"]{background:var(--paper);border-color:var(--sel)}
+.num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--paper);font:700 14px var(--body)}
+.site b{display:block;font-weight:600;line-height:1.3}
+.site small{color:var(--muted);font-size:13px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:18px 18px 16px;display:grid;gap:8px}
+.card h2{font-family:var(--display);font-size:24px;margin:0;line-height:1.2;text-wrap:balance}
+.kind{font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--muted)}
+.card p{margin:0;max-width:65ch}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:4px 0 0;font-size:14px}
+.facts dt{color:var(--muted)} .facts dd{margin:0;font-variant-numeric:tabular-nums}
+.card a{color:var(--cypress);font-weight:600}
+.note{font-size:13px;color:var(--muted);margin:0}
+svg text{font-family:var(--body)}
+.mk{cursor:pointer}
+.mk circle.halo{fill:var(--ring);opacity:0;transition:opacity .2s}
+.mk.on circle.halo{opacity:1}
+.mk.on circle.core{stroke:var(--sel);stroke-width:3}
+
+/* songs view */
+.songs{display:grid;gap:20px;max-width:760px;width:100%;margin:0 auto}
+.svc{display:grid;gap:10px}
+.svc h2,.songs h2{font-family:var(--display);font-size:22px;margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:600 14px var(--body);cursor:pointer;min-height:40px}
+.chip[aria-pressed="true"]{border-color:var(--cypress);background:var(--cypress);color:var(--paper)}
+.tracks{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.track{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:10px}
+.track-head{display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:center}
+.track-n{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--hill);color:var(--ink);font:700 15px var(--body);border:1px solid var(--line)}
+.track b{display:block;font-size:17px;line-height:1.3}
+.track small{color:var(--muted);font-size:14px}
+.play{display:inline-flex;align-items:center;gap:6px;padding:10px 14px;min-height:44px;border-radius:8px;background:var(--cypress);color:var(--paper);font:700 14px var(--body);text-decoration:none;white-space:nowrap}
+.play svg{width:16px;height:16px}
+.more{font-size:13px;color:var(--muted)}
+.more summary{cursor:pointer;padding:4px 0;list-style-position:inside}
+.alt{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.alt a{padding:6px 10px;border-radius:6px;border:1px solid var(--line);color:var(--ink);text-decoration:none;font-size:13px;font-weight:600}
+.alt a:hover{border-color:var(--cypress)}
+.applebox{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:10px}
+.applebox iframe{width:100%;height:450px;border:0;border-radius:10px;background:transparent}
+.applebox a{color:var(--cypress);font-weight:600}
+@media (max-width:480px){.track-head{grid-template-columns:34px 1fr}.track-head .play{grid-column:1 / -1;justify-content:center}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>סיור בהר הרצל</h1>
+    <p class="sub">הר הזיכרון, ירושלים · מפה אינטראקטיבית ושירי הסיור</p>
+  </header>
+
+  <!-- MAP -->
+  <section id="view-map" role="tabpanel" aria-labelledby="tab-map">
+    <div class="grid">
+      <div>
+        <div class="mapbox">
+          <svg id="map" viewBox="0 0 840 540" role="img" aria-label="מפה סכמטית של הר הרצל">
+            <g id="world"></g>
+          </svg>
+          <div class="ctrls">
+            <button id="zin" aria-label="התקרבות">+</button>
+            <button id="zout" aria-label="התרחקות">−</button>
+            <button id="zreset" aria-label="איפוס תצוגה" style="font-size:14px">⟲</button>
+          </div>
+          <div class="compass" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 18 18"><path d="M9 1 L13 15 L9 12 L5 15 Z" fill="currentColor"/></svg>צפון
+          </div>
+          <div class="legend">
+            <span><i class="dot" style="background:var(--stone)"></i>קבר</span>
+            <span><i class="dot" style="background:var(--cypress)"></i>חלקה</span>
+            <span><i class="dot" style="background:var(--memorial)"></i>אנדרטה</span>
+            <span><i class="dot" style="background:var(--cem);border:1px solid var(--contour)"></i>בית הקברות הצבאי</span>
+          </div>
+        </div>
+      </div>
+      <aside>
+        <ul class="list" id="list"></ul>
+        <div class="card" id="card" aria-live="polite"></div>
+        <p class="note">המיקומים על המפה משוערים ומיועדים להתמצאות כללית. לניווט מדויק השתמשו בקישור "פתיחה במפות" בכל אתר, או במשרדי ההר בכניסה הראשית.</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- SONGS -->
+  <section id="view-songs" role="tabpanel" aria-labelledby="tab-songs" hidden>
+    <div class="songs">
+      <div class="svc">
+        <h2>באיזה שירות אתם מאזינים?</h2>
+        <p class="sub">בחרו פעם אחת, וכל כפתור "האזנה" ייפתח ישירות באפליקציה שלכם.</p>
+        <div class="chips" id="chips" role="group" aria-label="שירות סטרימינג"></div>
+      </div>
+
+      <div>
+        <h2>שירי הסיור</h2>
+        <p class="sub">שיר אחד בין כל שתי תחנות. שימו אוזניות.</p>
+      </div>
+      <ol class="tracks" id="tracks"></ol>
+
+      <div class="applebox">
+        <h2>הפלייליסט המלא ב־Apple Music</h2>
+        <iframe id="appleEmbed" title="פלייליסט סיור בהר הרצל ב־Apple Music" loading="lazy"
+          allow="autoplay *; encrypted-media *; clipboard-write"
+          sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation-by-user-activation"></iframe>
+        <p class="note">מנויי Apple Music שומעים את השירים המלאים. בלי מנוי מתנגנות דגימות קצרות, ולכן כדאי לבחור למעלה את השירות שלכם.</p>
+        <a id="appleLink" target="_blank" rel="noopener">פתיחת הפלייליסט ב־Apple Music ↗</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<nav class="tabs" role="tablist" aria-label="ניווט">
+  <button role="tab" id="tab-map" aria-controls="view-map" aria-selected="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>
+    מפה
+  </button>
+  <button role="tab" id="tab-songs" aria-controls="view-songs" aria-selected="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+    שירים
+  </button>
+</nav>
+
+<script>
+/* ---------- songs ----------
+   Playlist order. To pin an exact track on a service, add it under `links`,
+   e.g. links:{spotify:"https://open.spotify.com/track/..."}; otherwise the app
+   opens a search for `q` on the chosen service. */
+const PLAYLIST_URL = "https://music.apple.com/il/playlist/%D7%A1%D7%99%D7%95%D7%A8-%D7%91%D7%94%D7%A8-%D7%94%D7%A8%D7%A6%D7%9C/pl.u-DdANxJ5TaJB3BZy?l=iw";
+const SONGS = [
+  {n:1, title:"ג'רוז", artist:"ענר שפירא ז״ל", q:"ג'רוז ענר שפירא", links:{}},
+  {n:2, title:"האור בקצה", artist:"אריק איינשטיין", q:"האור בקצה אריק איינשטיין", links:{}},
+  {n:3, title:"אפר ואבק", artist:"יהודה פוליקר", q:"אפר ואבק יהודה פוליקר", links:{}},
+  {n:4, title:"האמנם", artist:"לאה גולדברג · חוה אלברשטיין", q:"האמנם חוה אלברשטיין", links:{}},
+  {n:5, title:"אולי צריך לתת לזה עוד זמן", artist:"אריק איינשטיין", q:"אולי צריך לתת לזה עוד זמן אריק איינשטיין", links:{}},
+  {n:6, title:"שיר ללא שם", artist:"שלום חנוך · ביצוע: אביתר בנאי", q:"שיר ללא שם אביתר בנאי", links:{}},
+  {n:7, title:"כוכבים בשמיים", artist:"שי צברי", q:"כוכבים בשמיים שי צברי", links:{}},
+];
+const SERVICES = [
+  {id:"spotify", name:"Spotify", url:q=>`https://open.spotify.com/search/${encodeURIComponent(q)}`},
+  {id:"apple",   name:"Apple Music", url:q=>`https://music.apple.com/il/search?term=${encodeURIComponent(q)}`},
+  {id:"ytmusic", name:"YouTube Music", url:q=>`https://music.youtube.com/search?q=${encodeURIComponent(q)}`},
+  {id:"youtube", name:"YouTube", url:q=>`https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`},
+  {id:"deezer",  name:"Deezer", url:q=>`https://www.deezer.com/search/${encodeURIComponent(q)}`},
+  {id:"tidal",   name:"Tidal", url:q=>`https://listen.tidal.com/search?q=${encodeURIComponent(q)}`},
+  {id:"amazon",  name:"Amazon Music", url:q=>`https://music.amazon.com/search/${encodeURIComponent(q)}`},
+];
+const songUrl=(s,svc)=>s.links[svc.id]||svc.url(s.q);
+
+let svcId="spotify";
+try{const v=localStorage.getItem("herzl-svc");if(SERVICES.some(s=>s.id===v))svcId=v}catch(e){}
+
+const chips=document.getElementById("chips"), tracks=document.getElementById("tracks");
+const playIcon='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>';
+function renderChips(){
+  chips.innerHTML="";
+  for(const svc of SERVICES){
+    const b=document.createElement("button");
+    b.className="chip";b.textContent=svc.name;b.setAttribute("aria-pressed",svc.id===svcId);
+    b.onclick=()=>{svcId=svc.id;try{localStorage.setItem("herzl-svc",svcId)}catch(e){};renderChips();renderTracks()};
+    chips.appendChild(b);
+  }
+}
+const esc=t=>t.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function renderTracks(){
+  const svc=SERVICES.find(s=>s.id===svcId);
+  tracks.innerHTML=SONGS.map(s=>`<li class="track">
+    <div class="track-head">
+      <span class="track-n">${s.n}</span>
+      <span><b>${esc(s.title)}</b><small>${esc(s.artist)}</small></span>
+      <a class="play" href="${songUrl(s,svc)}" target="_blank" rel="noopener">${playIcon}האזנה ב־${svc.name}</a>
+    </div>
+    <details class="more"><summary>שירותים אחרים</summary>
+      <div class="alt">${SERVICES.filter(x=>x.id!==svcId).map(x=>`<a href="${songUrl(s,x)}" target="_blank" rel="noopener">${x.name}</a>`).join("")}</div>
+    </details>
+  </li>`).join("");
+}
+renderChips();renderTracks();
+document.getElementById("appleLink").href=PLAYLIST_URL;
+const embedSrc=PLAYLIST_URL.replace("https://music.apple.com","https://embed.music.apple.com");
+
+/* ---------- tabs ---------- */
+const TABS=[["tab-map","view-map"],["tab-songs","view-songs"]];
+function showTab(id){
+  for(const [t,v] of TABS){const on=t===id;document.getElementById(t).setAttribute("aria-selected",on);document.getElementById(v).hidden=!on}
+  if(id==="tab-songs"){const f=document.getElementById("appleEmbed");if(!f.src)f.src=embedSrc}
+  try{history.replaceState(null,"",id==="tab-songs"?"#songs":"#map")}catch(e){}
+  window.scrollTo(0,0);
+}
+for(const [t] of TABS)document.getElementById(t).onclick=()=>showTab(t);
+document.querySelector('[role="tablist"]').addEventListener("keydown",e=>{
+  if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;
+  const cur=TABS.findIndex(([t])=>document.getElementById(t).getAttribute("aria-selected")==="true");
+  const nxt=TABS[(cur+1)%TABS.length][0];showTab(nxt);document.getElementById(nxt).focus();
+});
+
+/* ---------- map ---------- */
+const SITES = [
+  {id:"herzl", n:1, kind:"קבר", color:"--stone", name:"קבר בנימין זאב הרצל", short:"פסגת ההר, רחבת הטקסים",
+   lat:31.77395, lon:35.18045,
+   text:"חוזה המדינה נפטר בווינה ב־1904. עצמותיו הועלו לישראל ונקברו בפסגת ההר באוגוסט 1949, וההר נקרא על שמו. על המצבה השחורה חרוטה מילה אחת: הרצל. מול הקבר נמצאת רחבת הטקסים שבה נערך טקס הדלקת המשואות בערב יום העצמאות.",
+   facts:[["נקבר","אוגוסט 1949"],["מיקום","פסגת ההר"]],
+   q:"קבר הרצל, הר הרצל ירושלים"},
+  {id:"jabo", n:2, kind:"קבר", color:"--stone", name:"קבר זאב ז'בוטינסקי", short:"חלקה נפרדת, דרום־מערב לקבר הרצל",
+   lat:31.77335, lon:35.17975,
+   text:"מייסד התנועה הרוויזיוניסטית נפטר בניו יורק ב־1940. בצוואתו ביקש שעצמותיו יועלו לארץ רק בהחלטת ממשלה עברית. ממשלת לוי אשכול קיבלה את ההחלטה, וב־1964 נקברו הוא ורעייתו יואנה בחלקה משפחתית נפרדת בהר.",
+   facts:[["נקבר","1964"],["מיקום","דרום־מערב לקבר הרצל"]],
+   q:"קבר ז'בוטינסקי הר הרצל"},
+  {id:"leaders", n:3, kind:"חלקה", color:"--cypress", name:"חלקת גדולי האומה", short:"ראשי ממשלה, נשיאים וראשי ההסתדרות הציונית",
+   lat:31.77450, lon:35.17985,
+   text:"החלקה שבה קבורים מנהיגי המדינה ובני זוגם. בין הקבורים: לוי אשכול, גולדה מאיר, יצחק רבין ולאה רבין, יצחק שמיר, שמעון פרס והנשיאים זלמן שזר וחיים הרצוג. לצידה חלקת ראשי ההסתדרות הציונית.",
+   facts:[["כוללת","ראשי ממשלה, נשיאים, יושבי ראש הכנסת"]],
+   q:"חלקת גדולי האומה הר הרצל"},
+  {id:"netzer", n:4, kind:"אנדרטה", color:"--memorial", name:"אנדרטת הנצר האחרון", short:"בסוף השביל המחבר מיד ושם",
+   lat:31.77425, lon:35.17700,
+   text:"לזכר ניצולי שואה שעלו לארץ, התגייסו ונפלו, רובם במלחמת העצמאות, ולא נותרו אחריהם בני משפחה. האנדרטה מסמלת בית שהתפרק ומשפחה שהמשכיותה נגדעה. היא נמצאת בקצה השביל המחבר שעולה מיד ושם אל הר הרצל.",
+   facts:[["מיקום","קצה השביל המחבר, צד מערב"]],
+   q:"אנדרטת הנצר האחרון הר הרצל"},
+  {id:"terror", n:5, kind:"אנדרטה", color:"--memorial", name:"אנדרטת נפגעי פעולות האיבה", short:"בין בית הקברות הצבאי לחלקת גדולי האומה",
+   lat:31.77500, lon:35.17806,
+   text:"קירות אבן ועליהם לוחות שיש שחורים החרוטים בשמות אזרחים, יהודים ושאינם יהודים, שנרצחו בפעולות איבה בארץ ישראל מ־1851 ועד היום. כאן נערך הטקס הממלכתי לזכר נפגעי פעולות האיבה ביום הזיכרון.",
+   facts:[["הוקמה","1998"],["תכנון","האדריכלים משה ורינה אורן"]],
+   q:"אנדרטת נפגעי פעולות האיבה הר הרצל"},
+  {id:"edri", n:6, kind:"קבר", color:"--stone", name:"גוש ד׳ · קבר סא״ל יהודה אדרי ז״ל", short:"בית הקברות הצבאי, גוש ד׳ חלקה 9",
+   lat:31.77610, lon:35.17760, approx:true,
+   text:"סגן אלוף יהודה אדרי, קצין בחיל המודיעין, נפל ב־14 ביוני 2001 (כ״ג בסיוון תשס״א) במהלך פעילות מבצעית באזור בית לחם. היה בן 45. נקבר בבית הקברות הצבאי בהר הרצל.",
+   facts:[["גוש","ד׳"],["חלקה","9"],["שורה","1"],["קבר","1"]],
+   q:"בית העלמין הצבאי הר הרצל"},
+];
+// context landmarks (not numbered)
+const MARKS = [
+  {name:"כניסה ראשית ומוזיאון הרצל", lat:31.77335, lon:35.18290},
+  {name:"היכל הזיכרון", lat:31.77555, lon:35.17920},
+  {name:"אל יד ושם", lat:31.77390, lon:35.17580, arrow:true},
+];
+
+const NS="http://www.w3.org/2000/svg";
+const LON0=35.1752, LAT0=31.7772;
+const P = (lat,lon)=>[(lon-LON0)*94600, (LAT0-lat)*110900+20];
+const el=(t,a={},p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p&&p.appendChild(e);return e};
+const css=v=>`var(${v})`;
+const world=document.getElementById("world");
+const [sx,sy]=P(31.77395,35.18045); // summit
+
+// hill contours: irregular rings around the summit
+(function(){
+  const g=el("g",{},world);
+  el("rect",{x:-400,y:-400,width:1640,height:1340,fill:css("--hill")},g);
+  for(let i=9;i>=1;i--){
+    const r=i*58, pts=[];
+    for(let a=0;a<=360;a+=6){
+      const t=a*Math.PI/180;
+      const w=1+0.10*Math.sin(3*t+i)+0.06*Math.cos(5*t-i*.7);
+      pts.push([sx-30+Math.cos(t)*r*1.35*w, sy+10+Math.sin(t)*r*0.95*w]);
+    }
+    el("path",{d:"M"+pts.map(p=>p.map(v=>v.toFixed(1)).join(",")).join("L")+"Z",
+      fill:i%2?css("--hill"):css("--bg"),"fill-opacity":i%2?1:.35,stroke:css("--contour"),"stroke-width":1},g);
+  }
+  // military cemetery zone (north / north-west slope)
+  const c=[[31.77700,35.17600],[31.77720,35.17860],[31.77600,35.17960],[31.77520,35.17880],[31.77480,35.17720],[31.77560,35.17600]].map(p=>P(...p));
+  el("path",{d:"M"+c.map(p=>p.join(",")).join("L")+"Z",fill:css("--cem"),stroke:css("--contour"),"stroke-dasharray":"4 3"},g);
+  const [cx,cy]=P(31.77665,35.17700);
+  const tl=el("text",{x:cx,y:cy,"text-anchor":"middle","font-size":13,fill:css("--muted"),"font-weight":600},g);tl.textContent="בית הקברות הצבאי";
+  // rows of graves hint
+  for(let r=0;r<6;r++)for(let k=0;k<9;k++){const [x,y]=P(31.77640-r*0.00018,35.17650+k*0.00025);
+    el("rect",{x:x,y:y,width:9,height:4,rx:1,fill:css("--contour"),opacity:.7},g);}
+  // summit label
+  const sl=el("text",{x:sx+18,y:sy-40,"font-size":12,fill:css("--muted")},g);sl.textContent="פסגה · 834 מ׳";
+})();
+
+// paths
+(function(){
+  const g=el("g",{fill:"none","stroke-linecap":"round","stroke-linejoin":"round"},world);
+  const lines=[
+    [[31.77335,35.18290],[31.77360,35.18180],[31.77385,35.18100],[31.77395,35.18045]],           // entrance -> plaza -> Herzl
+    [[31.77395,35.18045],[31.77450,35.17985],[31.77500,35.17806],[31.77555,35.17920]],          // Herzl -> leaders -> terror -> hall
+    [[31.77395,35.18045],[31.77335,35.17975]],                                                  // to Jabotinsky
+    [[31.77500,35.17806],[31.77560,35.17760],[31.77610,35.17760],[31.77660,35.17700]],          // into cemetery
+    [[31.77390,35.17580],[31.77410,35.17640],[31.77425,35.17700],[31.77450,35.17985]],          // connecting trail from Yad Vashem
+    [[31.77425,35.17700],[31.77500,35.17806]],
+  ];
+  for(const L of lines){const d="M"+L.map(p=>P(...p).join(",")).join("L");
+    el("path",{d,stroke:css("--pathEdge"),"stroke-width":9},g);
+    el("path",{d,stroke:css("--path"),"stroke-width":6},g);}
+  // plaza
+  const [px,py]=P(31.77385,35.18110);
+  el("ellipse",{cx:px,cy:py,rx:34,ry:20,fill:css("--path"),stroke:css("--pathEdge")},g);
+  const t=el("text",{x:px,y:py+36,"text-anchor":"middle","font-size":11,fill:css("--muted")},g);t.textContent="רחבת הטקסים";
+  for(const m of MARKS){const [x,y]=P(m.lat,m.lon);
+    if(m.arrow){el("path",{d:`M${x+10},${y-6} L${x-4},${y} L${x+10},${y+6}`,stroke:css("--muted"),"stroke-width":2},g);}
+    else el("rect",{x:x-5,y:y-5,width:10,height:10,rx:2,fill:css("--muted")},g);
+    const tt=el("text",{x:m.arrow?x-8:x,y:y+(m.arrow?4:22),"text-anchor":m.arrow?"start":"middle","font-size":12,fill:css("--muted")},g);
+    tt.setAttribute("text-anchor",m.arrow?"end":"middle");tt.textContent=m.name;}
+})();
+
+// markers
+const mk={};
+const mg=el("g",{},world);
+for(const s of SITES){
+  const [x,y]=P(s.lat,s.lon);
+  const g=el("g",{class:"mk",transform:`translate(${x},${y})`,tabindex:-1},mg);
+  el("circle",{class:"halo",r:26},g);
+  if(s.approx) el("circle",{r:20,fill:"none",stroke:css(s.color),"stroke-dasharray":"3 3","stroke-width":1.5},g);
+  el("circle",{class:"core",r:13,fill:css(s.color),stroke:css("--paper"),"stroke-width":2.5},g);
+  const t=el("text",{"text-anchor":"middle",y:5,"font-size":13,"font-weight":700,fill:css("--paper")},g);t.textContent=s.n;
+  g.addEventListener("click",e=>{e.stopPropagation();select(s.id,true)});
+  mk[s.id]=g;
+}
+
+// list
+const list=document.getElementById("list");
+for(const s of SITES){
+  const li=document.createElement("li");
+  li.innerHTML=`<button class="site" id="b-${s.id}" aria-pressed="false"><span class="num" style="background:var(${s.color})">${s.n}</span><span><b>${s.name}</b><small>${s.short}</small></span></button>`;
+  li.firstChild.addEventListener("click",()=>select(s.id,true));
+  list.appendChild(li);
+}
+
+const card=document.getElementById("card");
+function select(id,center){
+  const s=SITES.find(x=>x.id===id);
+  for(const k in mk){mk[k].classList.toggle("on",k===id);document.getElementById("b-"+k).setAttribute("aria-pressed",k===id)}
+  mg.appendChild(mk[id]);
+  const facts=s.facts.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join("");
+  const link=`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.q)}`;
+  card.innerHTML=`<span class="kind">${s.kind} · ${s.n}</span><h2>${s.name}</h2><p>${s.text}</p><dl class="facts">${facts}</dl>
+    ${s.approx?'<p class="note">מיקום הגוש בתוך בית הקברות משוער. במשרד בית הקברות ובאתר "יזכור" אפשר לקבל הכוונה מדויקת לקבר.</p>':''}
+    <a href="${link}" target="_blank" rel="noopener">פתיחה במפות ↗</a>`;
+  if(center){const [x,y]=P(s.lat,s.lon);view.s=Math.max(view.s,1.6);view.x=420-x*view.s;view.y=270-y*view.s;apply()}
+}
+
+// pan & zoom
+const svg=document.getElementById("map");
+const view={x:0,y:0,s:1};
+function apply(){world.setAttribute("transform",`translate(${view.x},${view.y}) scale(${view.s})`)}
+function zoom(f,cx=420,cy=270){const ns=Math.min(4,Math.max(.8,view.s*f));view.x=cx-(cx-view.x)*ns/view.s;view.y=cy-(cy-view.y)*ns/view.s;view.s=ns;apply()}
+function toSvg(e){const r=svg.getBoundingClientRect();return[(e.clientX-r.left)*840/r.width,(e.clientY-r.top)*540/r.height]}
+svg.addEventListener("wheel",e=>{e.preventDefault();const [x,y]=toSvg(e);zoom(e.deltaY<0?1.15:1/1.15,x,y)},{passive:false});
+let drag=null;const ptrs=new Map();
+svg.addEventListener("pointerdown",e=>{ptrs.set(e.pointerId,toSvg(e));if(ptrs.size===1){drag={p:toSvg(e),x:view.x,y:view.y};svg.classList.add("drag")}});
+svg.addEventListener("pointermove",e=>{
+  if(!ptrs.has(e.pointerId))return;const prev=ptrs.get(e.pointerId);const cur=toSvg(e);ptrs.set(e.pointerId,cur);
+  if(ptrs.size===2){const [a,b]=[...ptrs.values()];const other=a===cur?b:a;
+    const d0=Math.hypot(prev[0]-other[0],prev[1]-other[1]),d1=Math.hypot(cur[0]-other[0],cur[1]-other[1]);
+    if(d0>0)zoom(d1/d0,(cur[0]+other[0])/2,(cur[1]+other[1])/2);drag=null;return}
+  if(drag){svg.setPointerCapture(e.pointerId);view.x=drag.x+cur[0]-drag.p[0];view.y=drag.y+cur[1]-drag.p[1];apply()}
+});
+const up=e=>{ptrs.delete(e.pointerId);if(!ptrs.size){drag=null;svg.classList.remove("drag")}};
+svg.addEventListener("pointerup",up);svg.addEventListener("pointercancel",up);
+document.getElementById("zin").onclick=()=>zoom(1.3);
+document.getElementById("zout").onclick=()=>zoom(1/1.3);
+document.getElementById("zreset").onclick=()=>{view.x=0;view.y=0;view.s=1;apply()};
+
+// initial frame: fit sites, select Herzl
+view.s=1.05;view.x=-40;view.y=-10;apply();
+select("herzl",false);
+if(location.hash==="#songs")showTab("tab-songs");
+
+if("serviceWorker" in navigator&&location.protocol==="https:"&&!/claude/.test(location.hostname)){
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
+</script>
+</body>
+</html>

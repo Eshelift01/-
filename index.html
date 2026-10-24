@@ -53,7 +53,7 @@ button,a{-webkit-tap-highlight-color:transparent}
   background:transparent;color:var(--muted);font:600 13px var(--body);cursor:pointer}
 .tabs button svg{width:24px;height:24px}
 .tabs button[aria-selected="true"]{color:var(--cypress);background:var(--ring)}
-[role="tabpanel"][hidden]{display:none}
+[hidden]{display:none!important}
 
 /* map view */
 .grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
@@ -89,28 +89,45 @@ svg text{font-family:var(--body)}
 .mk.on circle.halo{opacity:1}
 .mk.on circle.core{stroke:var(--sel);stroke-width:3}
 
-/* playlist view */
+/* playlist view: in-app player on top, tracklist, then "open in your own app" */
 .songs{display:grid;gap:20px;max-width:760px;width:100%;margin:0 auto}
 .songs h2{font-family:var(--display);font-size:22px;margin:0}
+.player{background:var(--paper);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:grid}
+.screen{position:relative;aspect-ratio:16/9;max-width:100%;background:#000}
+.screen>div,.screen iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.screen .idle{display:grid;place-items:center;align-content:center;gap:6px;padding:16px;text-align:center;color:#e6ebe4;background:var(--cypress)}
+.screen .idle b{font-family:var(--display);font-size:22px}
+.nowbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px}
+.nowbar b{display:block;font-size:17px;line-height:1.3;overflow-wrap:anywhere}
+.nowbar small{color:var(--muted);font-size:13px}
+.ctl{display:flex;gap:6px;direction:ltr}
+.ctl button{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--paper);color:var(--ink);display:grid;place-items:center;cursor:pointer}
+.ctl button.main{width:52px;height:52px;background:var(--cypress);border-color:var(--cypress);color:var(--paper)}
+.ctl svg{width:20px;height:20px}
+.pnote{margin:0;padding:0 14px 12px;font-size:13px;color:var(--muted)}
+.pnote a{color:var(--cypress);font-weight:600}
+.tracks{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--paper);overflow:hidden}
+.track{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;border-top:1px solid var(--line)}
+.track:first-child{border-top:0}
+.pick{display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;align-items:center;padding:10px 14px;min-height:56px;border:0;background:transparent;color:inherit;font:inherit;text-align:right;cursor:pointer}
+.pick:hover{background:var(--ring)}
+.track.on{background:var(--ring)}
+.track.on .track-n{color:var(--cypress)}
+.track-n{color:var(--muted);font:700 14px var(--body);font-variant-numeric:tabular-nums;text-align:center}
+.track b{display:block;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+.track small{color:var(--muted);font-size:13px}
+.ext{display:grid;place-items:center;width:44px;height:44px;margin-inline-end:8px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:18px}
+.ext:hover{color:var(--cypress);background:var(--ring)}
 .svc{display:grid;gap:10px}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{padding:8px 14px;min-height:40px;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:600 14px var(--body);cursor:pointer}
 .chip[aria-pressed="true"]{border-color:var(--cypress);background:var(--cypress);color:var(--paper)}
-.whole{display:grid;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px}
+.whole{display:grid;gap:8px}
 .whole .note{margin:0}
 .btnrow{display:flex;flex-wrap:wrap;gap:8px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;min-height:44px;border-radius:8px;border:1px solid var(--cypress);background:var(--cypress);color:var(--paper);font:700 14px var(--body);text-decoration:none;cursor:pointer}
+.btn svg{width:16px;height:16px}
 .btn.ghost{background:transparent;color:var(--cypress)}
-.tracks{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--paper);overflow:hidden}
-.track{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--line)}
-.track:first-child{border-top:0}
-.track-n{color:var(--muted);font:600 14px var(--body);font-variant-numeric:tabular-nums;text-align:center}
-.track b{display:block;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
-.track small{color:var(--muted);font-size:13px}
-.play{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--cypress);color:var(--paper)}
-.play svg{width:18px;height:18px}
-.applebox{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:10px}
-.applebox iframe{width:100%;height:450px;border:0;border-radius:10px;background:transparent}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -156,23 +173,31 @@ svg text{font-family:var(--body)}
   <!-- PLAYLIST -->
   <section id="view-songs" role="tabpanel" aria-labelledby="tab-songs" hidden>
     <div class="songs">
-      <div class="svc">
-        <h2>באיזה שירות אתם מאזינים?</h2>
-        <p class="sub">בחרו פעם אחת, וכל שיר ייפתח ישירות באפליקציה שלכם.</p>
-        <div class="chips" id="chips" role="group" aria-label="שירות סטרימינג"></div>
-      </div>
-      <div class="whole" id="whole"></div>
       <div>
-        <h2>שירי הסיור</h2>
+        <h2>הפלייליסט של הסיור</h2>
         <p class="sub" id="count"></p>
       </div>
+      <div class="player">
+        <div class="screen">
+          <div class="idle" id="idle"><b>מוכנים?</b><span>לחצו על ▶ או על שיר ברשימה</span></div>
+          <div id="yt"></div>
+        </div>
+        <div class="nowbar">
+          <span><b id="nowTitle">—</b><small id="nowArtist"></small></span>
+          <div class="ctl">
+            <button id="prev" aria-label="השיר הקודם"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+            <button id="pp" class="main" aria-label="נגינה"><svg viewBox="0 0 24 24" fill="currentColor"><path id="ppIcon" d="M7 4v16l13-8z"/></svg></button>
+            <button id="next" aria-label="השיר הבא"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+          </div>
+        </div>
+        <p class="pnote" id="pnote" aria-live="polite"></p>
+      </div>
       <ol class="tracks" id="tracks"></ol>
-      <div class="applebox">
-        <h2>האזנה כאן בדף</h2>
-        <iframe id="appleEmbed" title="פלייליסט סיור בהר הרצל ב־Apple Music" loading="lazy"
-          allow="autoplay *; encrypted-media *; clipboard-write"
-          sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation-by-user-activation"></iframe>
-        <p class="note">מנויי Apple Music שומעים כאן את השירים המלאים. בלי מנוי מתנגנות דגימות קצרות.</p>
+      <div class="svc">
+        <h2>מעדיפים את אפליקציית המוזיקה שלכם?</h2>
+        <p class="sub">בחרו שירות, והכפתור ↗ ליד כל שיר יפתח אותו שם.</p>
+        <div class="chips" id="chips" role="group" aria-label="שירות סטרימינג"></div>
+        <div class="whole" id="whole"></div>
       </div>
     </div>
   </section>
@@ -191,43 +216,45 @@ svg text{font-family:var(--body)}
 
 <script>
 /* ---------- playlist ----------
-   Songs in playlist order. A song opens a search for `q` on the chosen service;
+   Songs in playlist order: [title, artist, search text (optional), YouTube video id].
+   The in-app player plays the YouTube video; a song without one opens a YouTube
+   search instead. The ↗ link opens a search for `q` on the chosen service;
    to pin the exact track, add it under `links`, e.g. links:{spotify:"https://open.spotify.com/track/..."}.
    The whole playlist lives on Apple Music; paste a copy's link into a service's
    `playlist` and its "whole playlist" button opens it instead of TuneMyMusic. */
 const PLAYLIST_URL = "https://music.apple.com/il/playlist/%D7%A1%D7%99%D7%95%D7%A8-%D7%91%D7%94%D7%A8-%D7%94%D7%A8%D7%A6%D7%9C/pl.u-DdANxJ5TaJB3BZy?l=iw";
 const TRANSFER_URL = "https://www.tunemymusic.com/";
 const SONGS = [
-  ["The Rain Song","Led Zeppelin"],
-  ["צבעים","Sheshet"],
-  ["כמה טוב שבאת הביתה","אריק איינשטיין"],
-  ["Wild Horses","The Rolling Stones"],
-  ["שיר ללא שם","יהודית רביץ"],
-  ["Cannock Chase","Labi Siffre"],
-  ["ריבים קטנים","יהונתן גפן & דויד ברוזה"],
-  ["איך זה שכוכב","מתי כספי"],
-  ["Hurt","Johnny Cash"],
-  ["אולי צריך לתת לזה עוד זמן","אריק איינשטיין & יצחק קלפטר"],
-  ["Stairway to Heaven","Led Zeppelin"],
-  ["שיר אהבה סטנדרטי","אריק איינשטיין & יוני רכטר"],
-  ["All I Need","Radiohead"],
-  ["Harvest Moon","Neil Young"],
-  ["Nude","Radiohead"],
-  ["Weird Fishes / Arpeggi","Radiohead"],
-  ["Wish You Were Here","Pink Floyd"],
-  ["Alone Again (Naturally)","Gilbert O'Sullivan"],
-  ["בלדה לשיער הארוך ולשיער הקצר","הדודאים"],
-  ["פרח","יהודה פוליקר"],
-  ["בלילה","צליל מכוון · יצחק קלפטר","בלילה צליל מכוון"],
-  ["דמעות של מלאכים","יהודית רביץ & יוני רכטר"],
-  ["מישהו","יהודית רביץ"],
-  ["מקום לדאגה","מתי כספי"],
-  ["שיעור פסנתר","כוורת"],
-  ["Landslide","Fleetwood Mac"],
-  ["Don't Dream It's Over","Crowded House"],
-  ["I'll Follow the Sun","The Beatles"],
-  ["פנים ושמות","דני רובס"],
-].map(([title,artist,q],i)=>({n:i+1,title,artist,q:q||`${title} ${artist.split(/ & | · /)[0]}`,links:{}}));
+  ["The Rain Song","Led Zeppelin","","TRt4hQs3nH0"],
+  ["צבעים","Sheshet","צבעים ששת",""],
+  ["כמה טוב שבאת הביתה","אריק איינשטיין","","U58uKBDtZyo"],
+  ["Wild Horses","The Rolling Stones","","nY_GgPi5eCM"],
+  ["שיר ללא שם","יהודית רביץ","","doh10LVsJYA"],
+  ["Cannock Chase","Labi Siffre","","aavxo3n8-xE"],
+  ["ריבים קטנים","יהונתן גפן & דויד ברוזה","ריבים קטנים הכבש השישה עשר",""],
+  ["איך זה שכוכב","מתי כספי","","osnEGXT3SvQ"],
+  ["Hurt","Johnny Cash","","8AHCfZTRGiI"],
+  ["אולי צריך לתת לזה עוד זמן","אריק איינשטיין & יצחק קלפטר","","Gk2pCuSQr5c"],
+  ["Stairway to Heaven","Led Zeppelin","","QkF3oxziUI4"],
+  ["שיר אהבה סטנדרטי","אריק איינשטיין & יוני רכטר","","3TFonhNEPno"],
+  ["All I Need","Radiohead","","FM7ALFsOH4g"],
+  ["Harvest Moon","Neil Young","","n2MtEsrcTTs"],
+  ["Nude","Radiohead","","BbWBRnDK_AE"],
+  ["Weird Fishes / Arpeggi","Radiohead","","LUjGtyYEi90"],
+  ["Wish You Were Here","Pink Floyd","","K6qj09OHvjw"],
+  ["Alone Again (Naturally)","Gilbert O'Sullivan","","og7UIeYUt3c"],
+  ["בלדה לשיער הארוך ולשיער הקצר","הדודאים","","Rjr2gUvhdI0"],
+  ["פרח","יהודה פוליקר","","Lc2a7gJ0cik"],
+  ["בלילה","צליל מכוון · יצחק קלפטר","בלילה צליל מכוון","lvMbU4SxtVg"],
+  ["דמעות של מלאכים","יהודית רביץ & יוני רכטר","","3rN_D8ATbfk"],
+  ["מישהו","יהודית רביץ","","Asc9kIFdTPY"],
+  ["מקום לדאגה","מתי כספי","","vzM7MR9ry-k"],
+  ["שיעור פסנתר","כוורת","",""],
+  ["Landslide","Fleetwood Mac","","WM7-PYtXtJM"],
+  ["Don't Dream It's Over","Crowded House","","J9gKyRmic20"],
+  ["I'll Follow the Sun","The Beatles","","28d_A_NuJ7A"],
+  ["פנים ושמות","דני רובס","","aAPQwpGqL1E"],
+].map(([title,artist,q,yt],i)=>({n:i+1,title,artist,q:q||`${title} ${artist.split(/ & | · /)[0]}`,yt,links:{}}));
 const SERVICES = [
   {id:"spotify", name:"Spotify", playlist:"", url:q=>`https://open.spotify.com/search/${encodeURIComponent(q)}`},
   {id:"apple",   name:"Apple Music", playlist:PLAYLIST_URL, url:q=>`https://music.apple.com/il/search?term=${encodeURIComponent(q)}`},
@@ -244,7 +271,8 @@ const playIcon='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
 let svcId="spotify";
 try{const v=localStorage.getItem("herzl-svc");if(SERVICES.some(s=>s.id===v))svcId=v}catch(e){}
 const chips=document.getElementById("chips"), whole=document.getElementById("whole"), tracks=document.getElementById("tracks");
-document.getElementById("count").textContent=`${SONGS.length} שירים, לפי סדר הפלייליסט. שימו אוזניות.`;
+document.getElementById("count").textContent=`${SONGS.length} שירים, לפי סדר הפלייליסט. שימו אוזניות ולחצו על ▶.`;
+const YT_SEARCH=SERVICES.find(s=>s.id==="youtube");
 
 function renderPlaylist(){
   const svc=SERVICES.find(s=>s.id===svcId);
@@ -257,28 +285,88 @@ function renderPlaylist(){
   }
   whole.innerHTML=svc.playlist
     ?`<div class="btnrow"><a class="btn" href="${svc.playlist}" target="_blank" rel="noopener">${playIcon}פתיחת כל הפלייליסט ב־${svc.name}</a></div>`
-    :`<p class="note">רוצים את כל הפלייליסט שמור ב־${svc.name}? העתיקו את הקישור, ובאתר TuneMyMusic בחרו Apple Music כמקור, הדביקו אותו ובחרו ${svc.name} כיעד. אפשר גם פשוט להאזין לשירים אחד אחד ברשימה למטה.</p>
+    :`<p class="note">רוצים את כל הפלייליסט שמור ב־${svc.name}? העתיקו את הקישור, ובאתר TuneMyMusic בחרו Apple Music כמקור, הדביקו אותו ובחרו ${svc.name} כיעד.</p>
        <div class="btnrow"><button class="btn ghost" id="copy">העתקת קישור הפלייליסט</button>
        <a class="btn ghost" href="${TRANSFER_URL}" target="_blank" rel="noopener">העברה ל־${svc.name} ↗</a></div>`;
   const copy=document.getElementById("copy");
   if(copy)copy.onclick=async()=>{
     try{await navigator.clipboard.writeText(PLAYLIST_URL);copy.textContent="הקישור הועתק ✓"}
-    catch(e){prompt("העתיקו את הקישור:",PLAYLIST_URL)}
+    catch(e){copy.textContent=PLAYLIST_URL}
   };
-  tracks.innerHTML=SONGS.map(s=>`<li class="track">
-    <span class="track-n">${s.n}</span>
-    <span><b>${esc(s.title)}</b><small>${esc(s.artist)}</small></span>
-    <a class="play" href="${songUrl(s,svc)}" target="_blank" rel="noopener" aria-label="האזנה ל${esc(s.title)} ב־${svc.name}">${playIcon}</a>
+  tracks.innerHTML=SONGS.map((s,i)=>`<li class="track${i===cur?" on":""}">
+    <button class="pick" data-i="${i}" aria-label="נגינת ${esc(s.title)}"><span class="track-n">${s.n}</span>
+      <span><b>${esc(s.title)}</b><small>${esc(s.artist)}</small></span></button>
+    <a class="ext" href="${songUrl(s,svc)}" target="_blank" rel="noopener" aria-label="פתיחת ${esc(s.title)} ב־${svc.name}" title="פתיחה ב־${svc.name}">↗</a>
   </li>`).join("");
+  tracks.querySelectorAll(".pick").forEach(b=>b.onclick=()=>playAt(+b.dataset.i));
+}
+
+/* ---------- in-app player (YouTube IFrame API) ---------- */
+let cur=-1, yt=null, ytState="idle", playing=false;
+const pnote=document.getElementById("pnote"), ppIcon=document.getElementById("ppIcon");
+const ICON_PLAY="M7 4v16l13-8z", ICON_PAUSE="M6 4h4v16H6zM14 4h4v16h-4z";
+function setPlaying(v){playing=v;ppIcon.setAttribute("d",v?ICON_PAUSE:ICON_PLAY);document.getElementById("pp").setAttribute("aria-label",v?"השהיה":"נגינה")}
+function showNow(){
+  const s=SONGS[cur];
+  document.getElementById("nowTitle").textContent=s?s.title:"—";
+  document.getElementById("nowArtist").textContent=s?`שיר ${s.n} מתוך ${SONGS.length} · ${s.artist}`:"";
+  tracks.querySelectorAll(".track").forEach((li,i)=>li.classList.toggle("on",i===cur));
+}
+function fallback(msg){
+  pnote.innerHTML=`${msg} <a href="${PLAYLIST_URL}" target="_blank" rel="noopener">לפתיחה ב־Apple Music ↗</a>`;
+}
+// auto=true when the previous song ended: songs without a video are skipped
+function playAt(i,auto){
+  cur=(i+SONGS.length)%SONGS.length; showNow();
+  const s=SONGS[cur];
+  if(ytState==="failed"){fallback("הנגן המובנה לא נטען כאן. אפשר להאזין בכפתור ↗ ליד כל שיר.");return}
+  const link=`<a href="${YT_SEARCH.url(s.q)}" target="_blank" rel="noopener">האזנה ב־YouTube ↗</a>`;
+  if(!s.yt&&auto){playAt(cur+1,true);pnote.innerHTML=`דילגנו על "${esc(s.title)}", שלא זמין בנגן. ${link}`;return}
+  if(!s.yt){
+    pnote.innerHTML=`השיר הזה לא זמין בנגן. ${link}`;
+    if(yt&&yt.stopVideo)yt.stopVideo();setPlaying(false);return;
+  }
+  pnote.textContent="";
+  if(ytState!=="ready"){pnote.textContent="הנגן נטען…";return}
+  document.getElementById("idle").hidden=true;
+  yt.loadVideoById(s.yt);
+}
+document.getElementById("pp").onclick=()=>{
+  if(cur<0||!yt||ytState!=="ready"||!SONGS[cur].yt){playAt(cur<0?0:cur);return}
+  playing?yt.pauseVideo():yt.playVideo();
+};
+document.getElementById("next").onclick=()=>playAt(cur+1);
+document.getElementById("prev").onclick=()=>playAt(cur<=0?SONGS.length-1:cur-1);
+
+window.onYouTubeIframeAPIReady=()=>{
+  yt=new YT.Player("yt",{width:"100%",height:"100%",playerVars:{playsinline:1,rel:0,modestbranding:1},
+    events:{
+      onReady:()=>{ytState="ready";if(cur>=0)playAt(cur)},
+      onStateChange:e=>{
+        if(e.data===YT.PlayerState.PLAYING)setPlaying(true);
+        else if(e.data===YT.PlayerState.PAUSED)setPlaying(false);
+        else if(e.data===YT.PlayerState.ENDED){setPlaying(false);playAt(cur+1,true)}
+      },
+      onError:()=>{ // removed or not embeddable: point to YouTube and move on
+        const s=SONGS[cur];setPlaying(false);
+        pnote.innerHTML=`"${esc(s.title)}" לא ניתן לנגינה כאן. <a href="https://www.youtube.com/watch?v=${s.yt}" target="_blank" rel="noopener">האזנה ב־YouTube ↗</a>`;
+      }
+    }});
+};
+function loadYT(){
+  ytState="loading";
+  const sc=document.createElement("script");sc.src="https://www.youtube.com/iframe_api";
+  sc.onerror=()=>{ytState="failed";fallback("הנגן המובנה פועל באפליקציה המותקנת. כאן אפשר להאזין בכפתור ↗ ליד כל שיר.")};
+  document.head.appendChild(sc);
+  setTimeout(()=>{if(ytState==="loading"){ytState="failed";fallback("הנגן לא נטען. בדקו את החיבור, או האזינו בכפתור ↗ ליד כל שיר.")}},10000);
 }
 renderPlaylist();
-const embedSrc=PLAYLIST_URL.replace("https://music.apple.com","https://embed.music.apple.com");
 
 /* ---------- tabs ---------- */
 const TABS=[["tab-map","view-map"],["tab-songs","view-songs"]];
 function showTab(id){
   for(const [t,v] of TABS){const on=t===id;document.getElementById(t).setAttribute("aria-selected",on);document.getElementById(v).hidden=!on}
-  if(id==="tab-songs"){const f=document.getElementById("appleEmbed");if(!f.src)f.src=embedSrc}
+  if(id==="tab-songs"&&ytState==="idle")loadYT()
   try{history.replaceState(null,"",id==="tab-songs"?"#songs":"#map")}catch(e){}
   window.scrollTo(0,0);
 }

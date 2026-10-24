@@ -92,15 +92,23 @@ svg text{font-family:var(--body)}
 /* playlist view */
 .songs{display:grid;gap:20px;max-width:760px;width:100%;margin:0 auto}
 .songs h2{font-family:var(--display);font-size:22px;margin:0}
-.svcs{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
-.svcbtn{display:grid;gap:2px;padding:14px 16px;min-height:64px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);text-decoration:none}
-.svcbtn:hover{border-color:var(--cypress)}
-.svcbtn b{font-size:17px}
-.svcbtn small{color:var(--muted);font-size:13px}
-.svcbtn.main{background:var(--cypress);border-color:var(--cypress);color:var(--paper)}
-.svcbtn.main small{color:inherit;opacity:.85}
-.copy{justify-self:start;padding:10px 16px;min-height:44px;border-radius:8px;border:1px solid var(--cypress);background:transparent;color:var(--cypress);font:700 14px var(--body);cursor:pointer}
-.steps{margin:0;padding-inline-start:20px;display:grid;gap:4px;color:var(--muted);font-size:14px}
+.svc{display:grid;gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:8px 14px;min-height:40px;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:600 14px var(--body);cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--cypress);background:var(--cypress);color:var(--paper)}
+.whole{display:grid;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px}
+.whole .note{margin:0}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;min-height:44px;border-radius:8px;border:1px solid var(--cypress);background:var(--cypress);color:var(--paper);font:700 14px var(--body);text-decoration:none;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--cypress)}
+.tracks{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--paper);overflow:hidden}
+.track{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--line)}
+.track:first-child{border-top:0}
+.track-n{color:var(--muted);font:600 14px var(--body);font-variant-numeric:tabular-nums;text-align:center}
+.track b{display:block;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+.track small{color:var(--muted);font-size:13px}
+.play{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--cypress);color:var(--paper)}
+.play svg{width:18px;height:18px}
 .applebox{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:10px}
 .applebox iframe{width:100%;height:450px;border:0;border-radius:10px;background:transparent}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -148,20 +156,17 @@ svg text{font-family:var(--body)}
   <!-- PLAYLIST -->
   <section id="view-songs" role="tabpanel" aria-labelledby="tab-songs" hidden>
     <div class="songs">
-      <div>
-        <h2>הפלייליסט של הסיור</h2>
-        <p class="sub">בחרו את שירות הסטרימינג שלכם. שימו אוזניות.</p>
+      <div class="svc">
+        <h2>באיזה שירות אתם מאזינים?</h2>
+        <p class="sub">בחרו פעם אחת, וכל שיר ייפתח ישירות באפליקציה שלכם.</p>
+        <div class="chips" id="chips" role="group" aria-label="שירות סטרימינג"></div>
       </div>
-      <ul class="svcs" id="svcs"></ul>
-      <button class="copy" id="copy">העתקת קישור הפלייליסט</button>
+      <div class="whole" id="whole"></div>
       <div>
-        <p class="note">לשירותים שאינם Apple Music: הכפתור פותח את TuneMyMusic, שמעביר את הפלייליסט לשירות שלכם בחינם.</p>
-        <ol class="steps">
-          <li>לחצו "העתקת קישור הפלייליסט".</li>
-          <li>לחצו על השירות שלכם. ב־TuneMyMusic בחרו Apple Music כמקור והדביקו את הקישור.</li>
-          <li>בחרו את השירות שלכם כיעד, התחברו, והפלייליסט יופיע אצלכם.</li>
-        </ol>
+        <h2>שירי הסיור</h2>
+        <p class="sub" id="count"></p>
       </div>
+      <ol class="tracks" id="tracks"></ol>
       <div class="applebox">
         <h2>האזנה כאן בדף</h2>
         <iframe id="appleEmbed" title="פלייליסט סיור בהר הרצל ב־Apple Music" loading="lazy"
@@ -186,27 +191,87 @@ svg text{font-family:var(--body)}
 
 <script>
 /* ---------- playlist ----------
-   The playlist lives on Apple Music. For any other service, paste a direct
-   playlist link into `link` and its button opens it; while `link` is empty the
-   button opens TuneMyMusic, which copies the Apple Music playlist to that service. */
+   Songs in playlist order. A song opens a search for `q` on the chosen service;
+   to pin the exact track, add it under `links`, e.g. links:{spotify:"https://open.spotify.com/track/..."}.
+   The whole playlist lives on Apple Music; paste a copy's link into a service's
+   `playlist` and its "whole playlist" button opens it instead of TuneMyMusic. */
 const PLAYLIST_URL = "https://music.apple.com/il/playlist/%D7%A1%D7%99%D7%95%D7%A8-%D7%91%D7%94%D7%A8-%D7%94%D7%A8%D7%A6%D7%9C/pl.u-DdANxJ5TaJB3BZy?l=iw";
 const TRANSFER_URL = "https://www.tunemymusic.com/";
+const SONGS = [
+  ["The Rain Song","Led Zeppelin"],
+  ["צבעים","Sheshet"],
+  ["כמה טוב שבאת הביתה","אריק איינשטיין"],
+  ["Wild Horses","The Rolling Stones"],
+  ["שיר ללא שם","יהודית רביץ"],
+  ["Cannock Chase","Labi Siffre"],
+  ["ריבים קטנים","יהונתן גפן & דויד ברוזה"],
+  ["איך זה שכוכב","מתי כספי"],
+  ["Hurt","Johnny Cash"],
+  ["אולי צריך לתת לזה עוד זמן","אריק איינשטיין & יצחק קלפטר"],
+  ["Stairway to Heaven","Led Zeppelin"],
+  ["שיר אהבה סטנדרטי","אריק איינשטיין & יוני רכטר"],
+  ["All I Need","Radiohead"],
+  ["Harvest Moon","Neil Young"],
+  ["Nude","Radiohead"],
+  ["Weird Fishes / Arpeggi","Radiohead"],
+  ["Wish You Were Here","Pink Floyd"],
+  ["Alone Again (Naturally)","Gilbert O'Sullivan"],
+  ["בלדה לשיער הארוך והשיער ה…","הדודאים","בלדה לשיער הארוך הדודאים"],
+  ["פרח","יהודה פוליקר"],
+  ["בלילה","צליל מכוון · יצחק קלפטר","בלילה צליל מכוון"],
+  ["דמעות של מלאכים","יהודית רביץ & יוני רכטר"],
+  ["מישהו","יהודית רביץ"],
+  ["מקום לדאגה","מתי כספי"],
+  ["שיעור פסנתר","כוורת"],
+  ["Landslide","Fleetwood Mac"],
+  ["Don't Dream It's Over","Crowded House"],
+  ["I'll Follow the Sun","The Beatles"],
+  ["פנים ושמות","דני רובס"],
+].map(([title,artist,q],i)=>({n:i+1,title,artist,q:q||`${title} ${artist.split(/ & | · /)[0]}`,links:{}}));
 const SERVICES = [
-  {name:"Apple Music", link:PLAYLIST_URL},
-  {name:"Spotify", link:""},
-  {name:"YouTube Music", link:""},
-  {name:"YouTube", link:""},
-  {name:"Deezer", link:""},
-  {name:"Tidal", link:""},
-  {name:"Amazon Music", link:""},
+  {id:"spotify", name:"Spotify", playlist:"", url:q=>`https://open.spotify.com/search/${encodeURIComponent(q)}`},
+  {id:"apple",   name:"Apple Music", playlist:PLAYLIST_URL, url:q=>`https://music.apple.com/il/search?term=${encodeURIComponent(q)}`},
+  {id:"ytmusic", name:"YouTube Music", playlist:"", url:q=>`https://music.youtube.com/search?q=${encodeURIComponent(q)}`},
+  {id:"youtube", name:"YouTube", playlist:"", url:q=>`https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`},
+  {id:"deezer",  name:"Deezer", playlist:"", url:q=>`https://www.deezer.com/search/${encodeURIComponent(q)}`},
+  {id:"tidal",   name:"Tidal", playlist:"", url:q=>`https://listen.tidal.com/search?q=${encodeURIComponent(q)}`},
+  {id:"amazon",  name:"Amazon Music", playlist:"", url:q=>`https://music.amazon.com/search/${encodeURIComponent(q)}`},
 ];
-document.getElementById("svcs").innerHTML=SERVICES.map(s=>`<li><a class="svcbtn${s.link===PLAYLIST_URL?" main":""}" href="${s.link||TRANSFER_URL}" target="_blank" rel="noopener">
-  <b>${s.name}</b><small>${s.link?"פתיחת הפלייליסט ↗":"העברת הפלייליסט לשירות ↗"}</small></a></li>`).join("");
-const copyBtn=document.getElementById("copy");
-copyBtn.onclick=async()=>{
-  try{await navigator.clipboard.writeText(PLAYLIST_URL);copyBtn.textContent="הקישור הועתק ✓"}
-  catch(e){prompt("העתיקו את הקישור:",PLAYLIST_URL)}
-};
+const songUrl=(s,svc)=>s.links[svc.id]||svc.url(s.q);
+const esc=t=>t.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const playIcon='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>';
+
+let svcId="spotify";
+try{const v=localStorage.getItem("herzl-svc");if(SERVICES.some(s=>s.id===v))svcId=v}catch(e){}
+const chips=document.getElementById("chips"), whole=document.getElementById("whole"), tracks=document.getElementById("tracks");
+document.getElementById("count").textContent=`${SONGS.length} שירים, לפי סדר הפלייליסט. שימו אוזניות.`;
+
+function renderPlaylist(){
+  const svc=SERVICES.find(s=>s.id===svcId);
+  chips.innerHTML="";
+  for(const x of SERVICES){
+    const b=document.createElement("button");
+    b.className="chip";b.textContent=x.name;b.setAttribute("aria-pressed",x.id===svcId);
+    b.onclick=()=>{svcId=x.id;try{localStorage.setItem("herzl-svc",svcId)}catch(e){};renderPlaylist()};
+    chips.appendChild(b);
+  }
+  whole.innerHTML=svc.playlist
+    ?`<div class="btnrow"><a class="btn" href="${svc.playlist}" target="_blank" rel="noopener">${playIcon}פתיחת כל הפלייליסט ב־${svc.name}</a></div>`
+    :`<p class="note">רוצים את כל הפלייליסט שמור ב־${svc.name}? העתיקו את הקישור, ובאתר TuneMyMusic בחרו Apple Music כמקור, הדביקו אותו ובחרו ${svc.name} כיעד. אפשר גם פשוט להאזין לשירים אחד אחד ברשימה למטה.</p>
+       <div class="btnrow"><button class="btn ghost" id="copy">העתקת קישור הפלייליסט</button>
+       <a class="btn ghost" href="${TRANSFER_URL}" target="_blank" rel="noopener">העברה ל־${svc.name} ↗</a></div>`;
+  const copy=document.getElementById("copy");
+  if(copy)copy.onclick=async()=>{
+    try{await navigator.clipboard.writeText(PLAYLIST_URL);copy.textContent="הקישור הועתק ✓"}
+    catch(e){prompt("העתיקו את הקישור:",PLAYLIST_URL)}
+  };
+  tracks.innerHTML=SONGS.map(s=>`<li class="track">
+    <span class="track-n">${s.n}</span>
+    <span><b>${esc(s.title)}</b><small>${esc(s.artist)}</small></span>
+    <a class="play" href="${songUrl(s,svc)}" target="_blank" rel="noopener" aria-label="האזנה ל${esc(s.title)} ב־${svc.name}">${playIcon}</a>
+  </li>`).join("");
+}
+renderPlaylist();
 const embedSrc=PLAYLIST_URL.replace("https://music.apple.com","https://embed.music.apple.com");
 
 /* ---------- tabs ---------- */

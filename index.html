@@ -177,6 +177,10 @@ svg text{font-family:var(--body)}
         <h2>הפלייליסט של הסיור</h2>
         <p class="sub" id="count"></p>
       </div>
+      <div class="whole">
+        <p class="note">פתיחת כל הפלייליסט באפליקציה שלכם:</p>
+        <div class="btnrow" id="whole"></div>
+      </div>
       <div class="player">
         <div class="screen">
           <div class="idle" id="idle"><b>מוכנים?</b><span>לחצו על ▶ או על שיר ברשימה</span></div>
@@ -197,7 +201,6 @@ svg text{font-family:var(--body)}
         <h2>מעדיפים את אפליקציית המוזיקה שלכם?</h2>
         <p class="sub">בחרו שירות, והכפתור ↗ ליד כל שיר יפתח אותו שם.</p>
         <div class="chips" id="chips" role="group" aria-label="שירות סטרימינג"></div>
-        <div class="whole" id="whole"></div>
       </div>
     </div>
   </section>
@@ -220,10 +223,10 @@ svg text{font-family:var(--body)}
    The in-app player plays the YouTube video; a song without one opens a YouTube
    search instead. The ↗ link opens a search for `q` on the chosen service;
    to pin the exact track, add it under `links`, e.g. links:{spotify:"https://open.spotify.com/track/..."}.
-   The whole playlist lives on Apple Music; paste a copy's link into a service's
-   `playlist` and its "whole playlist" button opens it instead of TuneMyMusic. */
+   A service gets a "whole playlist" button only when it has a `playlist` link:
+   Apple Music has the original, YouTube gets a no-login playlist built from the
+   video ids. To add Spotify etc., paste that service's playlist link into `playlist`. */
 const PLAYLIST_URL = "https://music.apple.com/il/playlist/%D7%A1%D7%99%D7%95%D7%A8-%D7%91%D7%94%D7%A8-%D7%94%D7%A8%D7%A6%D7%9C/pl.u-DdANxJ5TaJB3BZy?l=iw";
-const TRANSFER_URL = "https://www.tunemymusic.com/";
 const SONGS = [
   ["The Rain Song","Led Zeppelin","","TRt4hQs3nH0"],
   ["צבעים","Sheshet","צבעים ששת","VZclp9pAvwM"],
@@ -255,11 +258,13 @@ const SERVICES = [
   {id:"spotify", name:"Spotify", playlist:"", url:q=>`https://open.spotify.com/search/${encodeURIComponent(q)}`},
   {id:"apple",   name:"Apple Music", playlist:PLAYLIST_URL, url:q=>`https://music.apple.com/il/search?term=${encodeURIComponent(q)}`},
   {id:"ytmusic", name:"YouTube Music", playlist:"", url:q=>`https://music.youtube.com/search?q=${encodeURIComponent(q)}`},
-  {id:"youtube", name:"YouTube", playlist:"", url:q=>`https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`},
+  {id:"youtube", name:"YouTube", playlist:"YT", url:q=>`https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`},
   {id:"deezer",  name:"Deezer", playlist:"", url:q=>`https://www.deezer.com/search/${encodeURIComponent(q)}`},
   {id:"tidal",   name:"Tidal", playlist:"", url:q=>`https://listen.tidal.com/search?q=${encodeURIComponent(q)}`},
   {id:"amazon",  name:"Amazon Music", playlist:"", url:q=>`https://music.amazon.com/search/${encodeURIComponent(q)}`},
 ];
+const YT_PLAYLIST="https://www.youtube.com/watch_videos?video_ids="+SONGS.filter(s=>s.yt).map(s=>s.yt).join(",");
+SERVICES.find(s=>s.id==="youtube").playlist=YT_PLAYLIST;
 const songUrl=(s,svc)=>s.links[svc.id]||svc.url(s.q);
 const esc=t=>t.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const playIcon='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>';
@@ -270,6 +275,8 @@ const chips=document.getElementById("chips"), whole=document.getElementById("who
 document.getElementById("count").textContent=`${SONGS.length} שירים, לפי סדר הפלייליסט. שימו אוזניות ולחצו על ▶.`;
 const YT_SEARCH=SERVICES.find(s=>s.id==="youtube");
 
+whole.innerHTML=SERVICES.filter(x=>x.playlist).map(x=>
+  `<a class="btn" href="${x.playlist}" target="_blank" rel="noopener">${playIcon}${x.name}</a>`).join("");
 function renderPlaylist(){
   const svc=SERVICES.find(s=>s.id===svcId);
   chips.innerHTML="";
@@ -279,16 +286,6 @@ function renderPlaylist(){
     b.onclick=()=>{svcId=x.id;try{localStorage.setItem("herzl-svc",svcId)}catch(e){};renderPlaylist()};
     chips.appendChild(b);
   }
-  whole.innerHTML=svc.playlist
-    ?`<div class="btnrow"><a class="btn" href="${svc.playlist}" target="_blank" rel="noopener">${playIcon}פתיחת כל הפלייליסט ב־${svc.name}</a></div>`
-    :`<p class="note">רוצים את כל הפלייליסט שמור ב־${svc.name}? העתיקו את הקישור, ובאתר TuneMyMusic בחרו Apple Music כמקור, הדביקו אותו ובחרו ${svc.name} כיעד.</p>
-       <div class="btnrow"><button class="btn ghost" id="copy">העתקת קישור הפלייליסט</button>
-       <a class="btn ghost" href="${TRANSFER_URL}" target="_blank" rel="noopener">העברה ל־${svc.name} ↗</a></div>`;
-  const copy=document.getElementById("copy");
-  if(copy)copy.onclick=async()=>{
-    try{await navigator.clipboard.writeText(PLAYLIST_URL);copy.textContent="הקישור הועתק ✓"}
-    catch(e){copy.textContent=PLAYLIST_URL}
-  };
   tracks.innerHTML=SONGS.map((s,i)=>`<li class="track${i===cur?" on":""}">
     <button class="pick" data-i="${i}" aria-label="נגינת ${esc(s.title)}"><span class="track-n">${s.n}</span>
       <span><b>${esc(s.title)}</b><small>${esc(s.artist)}</small></span></button>

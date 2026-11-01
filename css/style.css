@@ -148,3 +148,16 @@ footer { text-align: center; padding: 20px; }
   .st-row { grid-template-columns: 1fr; }
   .grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* המבחן האמיתי */
+.opt.chk { cursor: pointer; }
+.opt.chk input { width: 18px; height: 18px; accent-color: var(--pri); margin-top: 3px; }
+.sel-row { align-items: center; flex-wrap: wrap; cursor: default; }
+.sel-row.col { flex-direction: column; align-items: stretch; }
+.sel-row .grow { flex: 1; }
+.sel-row select { padding: 6px 8px; border-radius: 8px; border: 2px solid var(--line); background: var(--card); max-width: 100%; }
+.fixline { width: 100%; color: var(--ok); font-weight: 700; }
+.game[data-g="exam"] { border: 2px solid var(--accent); }
+.opt, .opts { min-width: 0; }
+.sel-row.col select { width: 100%; }
+.sel-row select { text-overflow: ellipsis; }

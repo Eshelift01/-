@@ -168,6 +168,7 @@ const mistakeIds = () => Object.keys(store.get('mistakes', {}));
 
 /* ═════════════════════ ניווט ═════════════════════ */
 const GAMES = [
+  { id: 'exam', icon: '📝', name: 'המבחן האמיתי', desc: 'השאלות מהמבחן המסכם עצמו – עם ניקוד וציון בסוף.' },
   { id: 'quiz', icon: '🎯', name: 'שאלון אמריקאי', desc: 'ארבע תשובות, אחת נכונה. שאלות מכל סוג.' },
   { id: 'fill', icon: '✍️', name: 'השלמת היגד', desc: 'השלם את המילה החסרה – בבחירה או בהקלדה חופשית.' },
   { id: 'cards', icon: '🃏', name: 'היגד ותשובה', desc: 'כרטיסיות: קרא, נסה להיזכר, הפוך ובדוק את עצמך.' },
@@ -386,6 +387,7 @@ function fuzzyEq(input, answer) {
 
 /* ═════════════════════ המשחקים ═════════════════════ */
 const RUNNERS = {
+  exam: () => runExam(),
   quiz() {
     const pool = poolFor(['mc', 'fill']);
     runSession({ title: '🎯 שאלון אמריקאי', next: endless(pool) });

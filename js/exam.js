@@ -368,7 +368,23 @@ function runExam() {
   });
 }
 
+// מערבב את סדר התשובות בכל הצגה, כדי שלא יהיה דפוס קבוע של מיקום התשובה הנכונה.
+// תשובות כמו „כל התשובות נכונות” / „אף תשובה” נשארות בסוף; שאלה עם תשובה שמפנה לאותיות (״תשובות ב + ג״) לא מעורבבת.
+const META_OPT = /כל התשובות|אף תשובה/;
+const LETTER_REF = /תשוב(ה|ות)\s*['׳]?\s*[א-ד]['׳]?\s*(\+|ו-?|,)/;
+function shuffleOptions(q) {
+  if (!['single', 'multi'].includes(q.type) || q.options.length <= 2) return q;
+  if (q.options.some(o => LETTER_REF.test(o))) return q;
+  const idx = q.options.map((_, k) => k);
+  const free = shuffle(idx.filter(k => !META_OPT.test(q.options[k])));
+  const order = [...free, ...idx.filter(k => META_OPT.test(q.options[k]))];
+  const pos = k => order.indexOf(k);
+  return { ...q, options: order.map(k => q.options[k]),
+    correct: Array.isArray(q.correct) ? q.correct.map(pos).sort((a, b) => a - b) : pos(q.correct) };
+}
+
 function examSession(list, setKey) {
+  list = list.map(shuffleOptions);
   setHeader('📝 המבחן האמיתי');
   let i = 0; const results = [];
   const show = () => {

@@ -359,12 +359,12 @@ function runExam() {
   app().innerHTML = `<div class="summary"><div class="big">📝</div><h2>המבחן האמיתי</h2>
     <p>שאלות מתוך ניסיונות המבחן המסכם, בדיוק כמו שהופיעו – בחירה יחידה, בחירה מרובה, התאמה וסידור.<br>
     ניקוד חלקי כמו במבחן. אין לבבות – אפשר לחזור כמה שרוצים.</p>
-    <label class="row gap center small"><input type="checkbox" id="mix"> ערבב את סדר השאלות</label></div>
+    <label class="row gap center small"><input type="checkbox" id="orig"> לפי סדר השאלות המקורי (בלי ערבוב)</label></div>
     <div class="grid">${sets.map(x => `<button class="card" data-s="${x.k}"><span class="g-name">${x.name}</span>
       <span class="g-desc">${x.list.length} שאלות${best[x.k] != null ? ` • שיא: ${best[x.k]}` : ''}</span></button>`).join('')}</div>`;
   app().querySelectorAll('[data-s]').forEach(b => b.onclick = () => {
     const x = sets.find(y => y.k === b.dataset.s);
-    examSession($('#mix').checked ? shuffle(x.list) : x.list.slice(), x.k);
+    examSession($('#orig').checked ? x.list.slice() : shuffle(x.list), x.k);
   });
 }
 
@@ -384,7 +384,6 @@ function shuffleOptions(q) {
 }
 
 function examSession(list, setKey) {
-  list = list.map(shuffleOptions);
   setHeader('📝 המבחן האמיתי');
   let i = 0; const results = [];
   const show = () => {

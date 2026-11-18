@@ -1,0 +1,45 @@
+name: דוח מניות שבועי
+
+on:
+  schedule:
+    - cron: "17 5 * * 0"   # כל יום ראשון ב-05:17 UTC (בערך 07:17-08:17 שעון ישראל)
+  workflow_dispatch: {}     # אפשר גם להריץ ידנית מלשונית Actions
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: stock_analyzer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: הפקת הדוח
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: python weekly_report.py
+      - name: פתיחת Issue עם הדוח (GitHub שולח עליו התראה במייל ובאפליקציה)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          printf '\n\n@%s\n' "${{ github.repository_owner }}" >> reports/latest.md
+          gh issue create --repo "${{ github.repository }}" \
+            --title "📈 דוח מניות שבועי – $(date +%d/%m/%Y)" \
+            --body-file reports/latest.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: weekly-report
+          path: stock_analyzer/reports/

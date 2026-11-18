@@ -1,0 +1,8 @@
+yfinance>=0.2.54
+streamlit>=1.50
+plotly>=5.20
+pandas>=2.1
+numpy
+requests
+markdown-it-py
+youtube-transcript-api>=1.0
